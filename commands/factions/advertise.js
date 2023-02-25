@@ -21,22 +21,12 @@ module.exports = {
 
         // check json
         if (config[interaction.user.id.toString()] === undefined) {
-            interaction.reply({
-                content: "No faction logo set, set it with `/set-logo`, defaulting to https://cdn.discordapp.com/ephemeral-attachments/1079132532207013989/1079134986436890764/126355137.png",
-                ephemeral: true
-            });
-
             const logo = "https://cdn.discordapp.com/ephemeral-attachments/1079132532207013989/1079134986436890764/126355137.png";
         }
 
         else {
             const logo = config[interaction.user.id.toString()];
             console.log(logo);
-
-            interaction.reply({
-                content: `Faction logo found (${logo})`,
-                ephemeral: true
-            });
         }
 
         const
