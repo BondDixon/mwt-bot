@@ -3,19 +3,14 @@ require('dotenv').config();
 // get all from shares.js
 const
     {Client, Events, GatewayIntentBits, report, fs, Collection} = require('./shared.js'),
-    {EmbedBuilder, MessageActionRow, ButtonBuilder, ButtonStyle} = require("discord.js"),
+    {EmbedBuilder, MessageActionRow, ActionRowBuilder, ButtonBuilder, ButtonStyle} = require("discord.js"),
     token = process.env.TOKEN,
     client = new Client({
-        intents: [
-            GatewayIntentBits.Guilds,
-            GatewayIntentBits.GuildMessages,
-            GatewayIntentBits.MessageContent,
-            GatewayIntentBits.GuildMembers
-        ]
+        intents: Object.values(GatewayIntentBits).reduce((a, b) => a | b, 0),
     }),
     mongoose = require('mongoose');
 const profileModel = require("../models/profileSchema");
-const config = require("../data/config.json");
+const {request} = require("undici");
 
 // Database
 
@@ -45,6 +40,35 @@ client.on(Events.InteractionCreate, async interaction => {
 
     switch (interaction.type) {
 
+        case 2:
+
+            const command = client.commands.get(interaction.commandName);
+            try {
+                console.log(`Executing command ${interaction.commandName} for ${interaction.user.tag} (${interaction.user.id})`);
+                await command.execute(interaction);
+            } catch (error) {
+                console.error(error);
+                await interaction.reply({
+                    content: `There was an error while executing this command! Error: \`\`\`${error.stack}\`\`\``,
+                    ephemeral: true
+                });
+            }
+            break;
+
+        case 3:
+
+            // if starts with join_
+            if (interaction.customId.startsWith('join_')) {
+                const invite = interaction.customId.split('_')[1];
+                await interaction.reply({
+                    content: `Invite: ${invite}`,
+                    ephemeral: true
+                });
+            }
+
+
+            break;
+
         case 5:
             if (interaction.customId === 'factionAdvert') {
                 const
@@ -67,9 +91,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 // check json
                 if (config[interaction.user.id.toString()] === undefined) {
                     factionLogo = "https://cdn.discordapp.com/ephemeral-attachments/1079132532207013989/1079134986436890764/126355137.png";
-                }
-
-                else {
+                } else {
                     factionLogo = config[interaction.user.id.toString()];
                 }
 
@@ -77,39 +99,36 @@ client.on(Events.InteractionCreate, async interaction => {
                     .setColor('#0099ff')
                     .setAuthor({
                         name: factionName,
-                        iconURL: factionLogo,
-                        url: factionInvite
+                        iconURL: factionLogo
                     })
-                    .setThumbnail(factionLogo)
+                    .setImage(factionLogo)
                     .setTitle(`${factionName}`)
-                    .setDescription(`${factionDescription} \n\n\`\`\` LINKS \`\`\`\n INVITE: [Join us!](${factionInvite})`)
+                    .setDescription(factionDescription)
                     .setFooter({
                         text: `Submitted by ${user.tag}`,
                         iconURL: profilePicture
                     });
 
+                // Add a button to the embed
+
+                const row = new ActionRowBuilder()
+                    .addComponents(
+                        new ButtonBuilder()
+                            .setCustomId(`join_${factionInvite}`)
+                            .setLabel('Join | 0 so far')
+                            .setStyle(ButtonStyle.Primary)
+                    );
 
                 // send in channel with id 1078745396450430976
-
                 const channel = await client.channels.fetch('1078745396450430976');
-                await channel.send({embeds: [embed]});
+                await channel.send({embeds: [embed], components: [row]});
 
                 await interaction.reply({content: 'Your faction advert has been sent!', ephemeral: true});
+                break;
 
             }
 
-            break;
 
-        case 2:
-
-            const command = client.commands.get(interaction.commandName);
-            try {
-                await command.execute(interaction);
-            } catch (error) {
-                console.error(error);
-                await interaction.reply({content: 'There was an error while executing this command!', ephemeral: true});
-            }
-            break;
     }
 });
 
@@ -138,6 +157,7 @@ function load_commands(category) {
         client.commands.set(command_name, command);
         report.log(`Loaded command ${file} as ${command_name}`);
     }
+
 }
 
 // Log in to Discord with env
@@ -170,7 +190,11 @@ function updateMemberCount(member) {
     memberCountChannel.setName(`Members: ${memberCount}`);
 }
 
-client.on('guildMemberAdd', member => {
+client.on('guildMemberAdd', async member => {
+
+    const
+        catResult = await request('https://aws.random.cat/meow'),
+        {file} = await catResult.body.json();
 
     const
         welcome_channel = member.guild.channels.cache.find(channel => channel.name === 'welcomes'),
@@ -182,6 +206,7 @@ client.on('guildMemberAdd', member => {
     let welcome_embed = new EmbedBuilder()
         .setTitle('Welcome!')
         .setDescription(`Welcome to the server, **<@${member.user.id}>!** You're the ${member.guild.memberCount}${suffix} member!`)
+        .setImage(file)
         .setColor(0x00ff00)
         .setTimestamp();
 
@@ -210,7 +235,11 @@ client.on('guildMemberAdd', member => {
 
 });
 
-client.on('guildMemberRemove', member => {
+client.on('guildMemberRemove', async member => {
+
+    const
+        catResult = await request('https://aws.random.cat/meow'),
+        {file} = await catResult.body.json();
 
     const
         welcome_channel = member.guild.channels.cache.find(channel => channel.name === 'welcomes'),
@@ -219,6 +248,7 @@ client.on('guildMemberRemove', member => {
     let welcome_embed = new EmbedBuilder()
         .setTitle('Goodbye!')
         .setDescription(`Goodbye, **${member.user.tag}!**`)
+        .setImage(file)
         .setColor(0xff0000)
         .setTimestamp();
 
@@ -229,6 +259,12 @@ client.on('guildMemberRemove', member => {
 
 client.on('messageCreate', async message => {
 
+    // react with nerd
+    if (message.content.toLowerCase().includes('nerd')) {
+        await message.react('🤓');
+        // then hsield
+        message.react('🛡️');
+    }
 
 });
 
@@ -243,3 +279,6 @@ mongoose.connect(process.env.MONGODB_SRC, {
     console.log(err)
 })
 
+process.on('uncaughtException', function (error) {
+    console.log(error.stack);
+});

@@ -79,28 +79,53 @@ const profileModel = require("../../models/profileSchema");
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("leaderboard")
-        .setDescription("View the leaderboard of the server"),
+        .setDescription("View the leaderboard of the server")
+
+        .addStringOption(
+            option => option.setName("type")
+                .setDescription("The type of leaderboard you want to view")
+                .setRequired(true)
+                .addChoices(
+                    {name: "cash", value: "cash"},
+                    {name: "bank", value: "bank"}
+                )
+        ),
+
+
     async execute(interaction) {
 
-        const results = await profileModel.find({}).sort({
-            currency: -1
-        }).exec();
-
+        const sortOption = interaction.options.getString("type");
+        let results, leaderboard;
         let i = 0;
-        let leaderboard = results.map(result => {
-            i++;
-            return `${i}. <@${result.userID}> - $${result.currency}`
-        }).join("\n");
+
+        if (sortOption === "cash") {
+            results = await profileModel.find({}).sort({ currency: -1 }).exec();
+            leaderboard = results.map(result => {
+                i++; return `${i}. ${interaction.client.users.cache.get(result.userID)} - $${result.currency}`;
+            }).join("\n");
+
+        }
+
+        if (sortOption === "bank") {
+
+            results = await profileModel.find({}).sort({ bank: -1 }).exec();
+            leaderboard = results.map(result => {
+                i++; return `${i}. ${interaction.client.users.cache.get(result.userID)} - $${result.bank}`;
+            }).join("\n");
+
+
+        }
+
 
         const embed = new EmbedBuilder()
-            .setTitle("Leaderboard")
+            .setTitle("Leaderboard" + ` (By ${sortOption})`)
             .setDescription(leaderboard)
             .setTimestamp()
-                .setFooter({
-                    text: `Requested by ${interaction.user.tag}`,
-                    iconURL: interaction.user.displayAvatarURL()
-                });
-        await interaction.reply({ embeds: [embed] });
+            .setFooter({
+                text: `Requested by ${interaction.user.tag}`,
+                iconURL: interaction.user.displayAvatarURL()
+            });
+        await interaction.reply({embeds: [embed]});
 
     }
 

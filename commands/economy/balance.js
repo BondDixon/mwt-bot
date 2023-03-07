@@ -88,10 +88,12 @@ module.exports = {
 
     async execute(interaction) {
 
+        const userID = interaction.options.getMentionable("user") || interaction.user;
+        const username = userID.username;
         let profileData;
 
         try {
-            profileData = await profileModel.findOne({userID: interaction.user.id});
+            profileData = await profileModel.findOne({userID: userID.id});
             if (!profileData) {
                 const embed = new EmbedBuilder()
                     .setColor('#0099ff')
@@ -116,10 +118,11 @@ module.exports = {
         bank = bank.toLocaleString();
 
 
+        console.log(username)
+
         const embed = new EmbedBuilder()
             .setColor('#0099ff')
-            .setTitle("Your Balance")
-            .setDescription(`**BANK:** $${bank}\n**IN HAND:** $${currency}`)
+            .setDescription(`**<@${userID.id}>'s balance** \n\n**BANK:** $${bank}\n**IN HAND:** $${currency}`)
             .setTimestamp()
             .setFooter({
                 text: `Requested by ${interaction.user.tag}`,

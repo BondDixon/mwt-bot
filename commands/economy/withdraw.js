@@ -82,16 +82,28 @@ module.exports = {
         .setDescription("Withdraw money from your bank account")
         .addIntegerOption(option =>
             option.setName("amount")
-                .setDescription("The amount of money to withdraw")
-                .setRequired(true)
+                .setDescription("The amount of money you want to deposit")
+                .setRequired(false)
         ),
 
     async execute(interaction) {
 
         const
-            amount = interaction.options.getInteger("amount"),
-            profileData = await profileModel.findOne({userID: interaction.user.id}),
-            taxRate = 0.15,
+            profileData = await profileModel.findOne({userID: interaction.user.id});
+
+        // amount = user cash or amount
+        let
+            userCash = profileData.bank,
+            amount = /* cash if amount is undefined */ userCash;
+
+        // if amount is defined, set amount to amount
+        if (interaction.options.getInteger("amount")) {
+            amount = interaction.options.getInteger("amount");
+        }
+
+
+        const
+            taxRate = 0.05,
             taxed = Math.round(amount * taxRate),
             untaxed = amount - taxed;
 
@@ -111,7 +123,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setTitle("Withdraw")
-            .setDescription(`You withdrew $${amount.toLocaleString()} from your bank account. You were taxed 15% ($${taxed.toLocaleString()})`)
+            .setDescription(`You withdrew $${amount.toLocaleString()} from your bank account. You payed fees of 5% ($${taxed.toLocaleString()})`)
             .setTimestamp()
             .setFooter({
                     text: `Requested by ${interaction.user.tag}`,

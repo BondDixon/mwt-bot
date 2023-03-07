@@ -1,9 +1,12 @@
+require('dotenv').config();
+
 const
-    {SlashCommandBuilder} = require('discord.js'),
     {REST, Routes} = require('discord.js'),
     fs = require('node:fs'),
-    token = process.env.token,
+    token = process.env.TOKEN,
     clientId = "1078084068220092496";
+
+console.log(token)
 
 const commands = []
 
@@ -30,7 +33,7 @@ const rest = new REST({ version: '10' }).setToken(token);
 	try {
 		console.log(`Started refreshing ${commands.length} application (/) commands.`);
 
-		// The put method is used to fully refresh all commands in the guild with the current set
+		// Fully refresh all commands in the guild with the current set
 		const data = await rest.put(
 			Routes.applicationCommands(clientId),
 			{ body: commands },
@@ -38,7 +41,6 @@ const rest = new REST({ version: '10' }).setToken(token);
 
 		console.log(`Successfully reloaded ${data.length} application (/) commands.`);
 	} catch (error) {
-		// And of course, make sure you catch and log any errors!
 		console.error(error);
 	}
 })();

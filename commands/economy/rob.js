@@ -1,8 +1,7 @@
 const {
         SlashCommandBuilder,
         EmbedBuilder
-    } = require("discord.js"),
-    database = require("mongoose");
+    } = require("discord.js");
 const profileModel = require("../../models/profileSchema");
 
 const cooldown = new Set();
@@ -35,7 +34,6 @@ module.exports = {
 
 
         const
-            profileData = await profileModel.findOne({userID: interaction.user.id}),
             target = interaction.options.getUser("target");
 
         let targetData;
@@ -59,7 +57,7 @@ module.exports = {
 
             const
                 targetCash = targetData.currency,
-                robbed = Math.round(Math.random() * targetCash / 10)
+                robbed = Math.round(Math.random() / 2 * targetCash)
 
             if (robbed === 0) {
                 const embed = new EmbedBuilder()

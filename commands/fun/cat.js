@@ -1,28 +1,26 @@
 const {SlashCommandBuilder, EmbedBuilder, PermissionsBitField} = require("discord.js");
-const https = require('https');
+const { request } = require('undici');
 
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("cat")
-        .setDescription("Get a random cat image")
-        .addStringOption(option =>
-            option.setName("message")
-                .setDescription("The message to announce")
-                .setRequired(false)
-        ),
+        .setDescription("Get a random cat image"),
 
 
     async execute(interaction) {
 
-        const message = interaction.options.getString('message') || "";
-        
+
+        const
+            catResult = await request('https://aws.random.cat/meow'),
+            { file } = await catResult.body.json();
+
         const embed = new EmbedBuilder()
             .setColor('#0099ff')
-            .setTitle("Random cat")
-            .setImage("https://cataas.com/cat?width=512&height=512&text=" + message)
+            .setTitle(`Random Cat`)
+            .setImage(`${file}`)
             .setFooter({
-                text: "Powered by cataas.com",
+                text: "Powered by https://aws.random.cat/",
                 iconURL: "https://cataas.com/cat?width=32&height=32"
             });
 
